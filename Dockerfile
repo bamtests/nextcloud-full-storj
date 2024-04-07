@@ -40,9 +40,9 @@ RUN set -ex; \
     apt-mark auto '.*' > /dev/null; \
     apt-mark manual $savedAptMark; \
     ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
+        | awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); print so }' \
         | sort -u \
-        | xargs -r dpkg-query -S \
+        | xargs -r dpkg-query --search \
         | cut -d: -f1 \
         | sort -u \
         | xargs -rt apt-mark manual; \
@@ -51,6 +51,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 # ADD storj here - ffi install was added above with the other installations
+RUN echo ffi.enable=true > /usr/local/etc/php/conf.d/ffi.ini
 
 COPY storj-ffi.ini /usr/local/etc/php/conf.d/storj-ffi.ini
 
